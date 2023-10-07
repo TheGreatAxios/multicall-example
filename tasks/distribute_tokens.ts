@@ -23,55 +23,78 @@ task("distribute", "Distribute Tokens Script")
 	    const multicall = new hre.ethers.Contract(multicallAddress, multicallABI, signer);
 
 	    const contracts = tokens.map((addr: string) => new hre.ethers.Contract(addr, abi, signer));
-	   	
-	    const wallet = new hre.ethers.Wallet.createRandom();
 
-	    const b1 = contracts[0].interface.encodeFunctionData("approve", [signer.address, 1000]);
-	    const b2 = contracts[1].interface.encodeFunctionData("approve", [signer.address, 1000]);
-	    const b3 = contracts[2].interface.encodeFunctionData("approve", [signer.address, 1000]);
+	    const balances = await Promise.all(contracts.map((contract) => {
+	    	return contract.balanceOf(signer.address);
+	    }));
 
-	    const c1 = contracts[0].interface.encodeFunctionData("transferFrom", [signer.address, wallet.address, 1000]);
-	    // const c2 = contracts[1].interface.encodeFunctionData("transferFrom", [signer.address, wallet.address, 1000]);
-	    // const c3 = contracts[2].interface.encodeFunctionData("transferFrom", [signer.address, wallet.address, 1000]);
-	    // const c1 = contracts[0].transfer(wallet.address, 1000);
-	    // const c2 = contracts[1].transfer(wallet.address, 1000);
-	    // const c3 = contracts[2].transfer(wallet.address, 1000);
+	    const allowances = await Promise.all(contracts.map((contract) => {
+	    	return contract.allowance(signer.address, multicallAddress);
+	    }))
 
-	    // await contracts[0].approve(multicallAddress, 1000);
+	    for (let i = 0; i < contracts.length; i++) {
+	    	if (allowances[i] !== balances[i]) await contracts[i].approve(multicallAddress, balances[i]);
+	    }
 
+	    /** Creating Random Wallets for Distribution **/
+	    const wallets = [
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom(),
+			new hre.ethers.Wallet.createRandom()
+	    ];
 
-	    const results = await multicall.aggregate3([
-	    	// [
-	    	// 	contracts[0].address,
-	    	// 	false,
-	    	// 	b1
-	    	// ],
-	    	// [
-	    	// 	contracts[1].address,
-	    	// 	false,
-	    	// 	b2
-	    	// ],
-	    	// [
-	    	// 	contracts[2].address,
-	    	// 	false,
-	    	// 	b3
-	    	// ],
-	    	[
-	    		contracts[0].address,
-	    		false,
-	    		c1
-	    	],
-	    	// [
-	    	// 	contracts[1].address,
-	    	// 	false,
-	    	// 	c2
-	    	// ],
-	    	// [
-	    	// 	contracts[2].address,
-	    	// 	false,
-	    	// 	c3
-	    	// ]
-	    ]);
+	    let distributionCalls = [];
+
+	    contracts.forEach((contract, index) => {
+	    	wallets.forEach((wallet, index2) => {
+		    	distributionCalls.push([
+		    		contract.address,
+		    		false,
+		    		contract.interface.encodeFunctionData("transferFrom", [signer.address, wallet.address, 1])
+		    	]);
+		    });
+	    });
+
+	    console.log("Distribution Calls:", distributionCalls);
+	    const results = await multicall.aggregate3(distributionCalls);
 
 	    console.log("Results: ", results);
     });
