@@ -30,10 +30,15 @@ task("distribute", "Distribute Tokens Script")
 
 	    const allowances = await Promise.all(contracts.map((contract) => {
 	    	return contract.allowance(signer.address, multicallAddress);
-	    }))
+	    }));
+
+	    console.log("Balances: ", balances);
+	    console.log("Allowances: ", allowances);
 
 	    for (let i = 0; i < contracts.length; i++) {
-	    	if (allowances[i] !== balances[i]) await contracts[i].approve(multicallAddress, balances[i]);
+	    	if (allowances[i].toString() !== balances[i].toString()) {
+	    		await contracts[i].approve(multicallAddress, balances[i]);
+	    	}
 	    }
 
 	    /** Creating Random Wallets for Distribution **/
